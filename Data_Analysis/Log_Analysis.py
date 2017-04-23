@@ -19,18 +19,18 @@ def RotatioMatrix(roll,pitch,yaw):
 def computeDragLift(IMU_AccX,IMU_AccY,IMU_AccZ,GPS_VelN,GPS_VelE,GPS_VelD,roll, pitch, yaw, g,mass):
     R = RotatioMatrix(roll, pitch, yaw)
 
-    gravity = np.dot(R,np.array([0,0,1]))*g*mass
+    #gravity = np.dot(R,np.array([0,0,1]))*g*mass
 
     thrust = np.array([0.0,0.0,0.0])
 
-    F_tot = np.array([IMU_AccX,IMU_AccY,IMU_AccZ])*mass
+    F_tot = np.array([IMU_AccX,IMU_AccY,IMU_AccZ])*mass# F_tot - Gravity is the force???
 
 
     vel = np.array([GPS_VelN,GPS_VelE,GPS_VelD])
     v_dir = np.dot(R,vel/np.linalg.norm(vel))
     #drag*v + thrust*v + gravity *v = F_tot*v
-    drag = (np.dot(F_tot,v_dir) - np.dot(gravity,v_dir)  - np.dot(thrust,v_dir) )* v_dir
-    lift = F_tot - gravity - thrust - drag
+    drag = (np.dot(F_tot,v_dir)   - np.dot(thrust,v_dir) )* v_dir #- np.dot(gravity,v_dir)
+    lift = F_tot  - thrust - drag #- gravity
     return np.linalg.norm(drag), np.linalg.norm(lift)
 
 def computeAOA(GPS_VelN,GPS_VelE,GPS_VelD,roll,pitch,yaw):
@@ -43,6 +43,17 @@ def computeAOA(GPS_VelN,GPS_VelE,GPS_VelD,roll,pitch,yaw):
 
     return alpha
 
+
+def positionVisualization(GPS_Alt,GPS_Lat, GPS_Lon):
+    plt.figure(1)
+    plt.plot(GPS_Alt)
+    plt.xlabel('time')
+    plt.ylabel('altitude')
+
+    plt.figure(2)
+    plt.plot(GPS_Lat,GPS_Lon)
+    plt.xlabel('latitude')
+    plt.ylabel('longitude')
 
 
 
@@ -59,9 +70,18 @@ if __name__  == "__main__":
 
     roll,pitch,yaw = log[:,4],log[:,5],log[:,6]
     IMU_AccX,IMU_AccY,IMU_AccZ = log[:,21],log[:,22],log[:,23]
-    GPS_VelN,GPS_VelE,GPS_VelD = log[:,74],log[:,75],log[:,76]
+    GPS_Lat, GPS_Lon, GPS_Alt, GPS_VelN,GPS_VelE,GPS_VelD = log[:,71],log[:,72],log[:,73], log[:,74],log[:,75],log[:,76]
+
+    TIME_StartTime = log[:,356]
+
     throttle = log[:,106]
-    print(roll[0],IMU_AccX[0],GPS_VelN[0])
+
+
+    positionVisualization(GPS_Alt,GPS_Lat, GPS_Lon)
+
+
+
+    print(TIME_StartTime[0])
 
     len = len(roll)
     len = int(len/5)
@@ -75,11 +95,11 @@ if __name__  == "__main__":
 
 
 
-    plt.figure(1)
+    plt.figure(3)
     plt.plot(alpha,lift,'ro')
     plt.xlabel('alpha')
     plt.ylabel('lift')
-    plt.figure(2)
+    plt.figure(4)
     plt.plot(alpha,drag,'ro')
     plt.xlabel('alpha')
     plt.ylabel('drag')
